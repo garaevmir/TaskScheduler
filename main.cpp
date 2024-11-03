@@ -5,6 +5,7 @@
 #include <queue>
 #include <thread>
 
+template <typename function_type>
 class TaskScheduler {
 public:
     TaskScheduler() {
@@ -29,7 +30,7 @@ public:
         }
     }
 
-    void Add(std::function<void()> task, std::time_t timestamp) {
+    void Add(function_type task, std::time_t timestamp) {
         std::unique_lock<std::mutex> lock(mutex);
         tasks.emplace(std::move(task), timestamp);
         cond.notify_one();
@@ -37,9 +38,9 @@ public:
 
 private:
     struct Task {
-        Task(std::function<void()> _func, std::time_t _time) : func(std::move(_func)), time(_time){};
+        Task(function_type _func, std::time_t _time) : func(std::move(_func)), time(_time){};
 
-        std::function<void()> func;
+        function_type func;
         std::time_t time;
 
         bool operator<(const Task& other) const {
@@ -76,7 +77,7 @@ private:
 };
 
 int main() {
-    TaskScheduler scheduler;
+    TaskScheduler<std::function<void()>> scheduler;
 
     scheduler.Add([] { std::cout << "Task 1\n"; }, std::time(nullptr) + 2);
     scheduler.Add([] { std::cout << "Task 2\n"; }, std::time(nullptr) + 1);
